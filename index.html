@@ -515,6 +515,22 @@
             transition: all 0.3s ease;
         }
 
+        .form-input.error {
+            border-color: #ef4444 !important;
+            background: #2a1a1a !important;
+        }
+
+        .form-error {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
         .form-input:focus {
             outline: none;
             border-color: #5a5a5a;
@@ -605,7 +621,8 @@
             z-index: 3000;
             opacity: 0;
             transition: all 0.3s ease;
-            max-width: calc(100% - 40px);
+            max-width: 100%;
+            width: 94%;
         }
 
         .toast.show {
@@ -645,6 +662,10 @@
                 border: 1px solid #3a3a3a;
                 padding-bottom: 0;
                 padding-top: 80px;
+            }
+
+            .login-screen {
+                min-height: 100vh;
             }
 
             .bottom-nav {
@@ -741,6 +762,10 @@
 
             .product-item {
                 width: 100%;
+            }
+
+            .toast {
+                max-width: 400px;
             }
         }
 
@@ -1071,7 +1096,8 @@
                 <div class="form-group">
                     <label class="form-label">Cantidad</label>
                     <input type="number" class="form-input" id="saleCantidad" placeholder="Ej: 1" min="1"
-                        oninput="calculateTotal()" required>
+                        oninput="validateStock()" required>
+                    <div class="form-error" id="stockError">⚠️ Stock insuficiente</div>
                 </div>
 
                 <div class="form-group">
@@ -1181,7 +1207,68 @@
             });
         }
 
-        // Calcular total automáticamente
+        // Variable para guardar el producto seleccionado
+        let selectedProductData = null;
+
+        function onProductChange() {
+            const select = document.getElementById('saleProducto');
+            const selectedValue = select.value;
+
+            if (selectedValue) {
+                selectedProductData = JSON.parse(selectedValue);
+                document.getElementById('salePrecio').value = selectedProductData.precio;
+
+                // Resetear cantidad y ocultar error
+                document.getElementById('saleCantidad').value = '';
+                document.getElementById('saleTotal').value = '';
+                hideStockError();
+
+                calculateTotal();
+            } else {
+                selectedProductData = null;
+                document.getElementById('salePrecio').value = '';
+                document.getElementById('saleTotal').value = '';
+                hideStockError();
+            }
+        }
+
+        function validateStock() {
+            const cantidadInput = document.getElementById('saleCantidad');
+            const cantidad = parseInt(cantidadInput.value) || 0;
+            const submitBtn = document.getElementById('btnSubmitSale');
+
+            if (!selectedProductData) {
+                return true;
+            }
+
+            const stockDisponible = selectedProductData.stock;
+
+            if (cantidad > stockDisponible) {
+                // Mostrar error
+                cantidadInput.classList.add('error');
+                document.getElementById('stockError').classList.add('show');
+                document.getElementById('stockError').textContent = `⚠️ Solo quedan ${stockDisponible} unidades`;
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+                return false;
+            } else {
+                // Ocultar error
+                hideStockError();
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                calculateTotal();
+                return true;
+            }
+        }
+
+        function hideStockError() {
+            const cantidadInput = document.getElementById('saleCantidad');
+            cantidadInput.classList.remove('error');
+            document.getElementById('stockError').classList.remove('show');
+        }
+
         function calculateTotal() {
             const cantidad = parseInt(document.getElementById('saleCantidad').value) || 0;
             const precio = parseFloat(document.getElementById('salePrecio').value) || 0;
@@ -1302,7 +1389,7 @@
             setTimeout(() => {
                 document.body.removeChild(form);
                 closeModal('modalAddStock');
-                showToast('✅ Stock agregado correctamente! Abre tu Google Sheet para verificar.');
+                showToast('Stock agregado correctamente!');
                 btn.classList.remove('loading');
                 btn.disabled = false;
             }, 2000);
@@ -1311,14 +1398,19 @@
         function submitAddSale(event) {
             event.preventDefault();
 
+            // Validar stock antes de enviar
+            if (!validateStock()) {
+                return; // No enviar si no hay stock suficiente
+            }
+
             const btn = document.getElementById('btnSubmitSale');
             btn.classList.add('loading');
             btn.disabled = true;
 
             const data = {
                 action: 'addSale',
-                producto: document.getElementById('saleProducto').value,
-                talle: document.getElementById('saleTalle').value,
+                producto: selectedProductData.producto,
+                talle: selectedProductData.talles,
                 cantidad: parseInt(document.getElementById('saleCantidad').value),
                 precio: parseFloat(document.getElementById('salePrecio').value),
                 metodoPago: document.getElementById('saleMetodoPago').value
@@ -1340,24 +1432,24 @@
             form.action = GOOGLE_SCRIPT_URL;
             form.target = 'hidden_iframe';
 
-            // Agregar el campo de datos
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'data';
             input.value = JSON.stringify(data);
             form.appendChild(input);
 
-            // Agregar al DOM y enviar
             document.body.appendChild(form);
             form.submit();
 
-            // Limpiar después de enviar
             setTimeout(() => {
                 document.body.removeChild(form);
                 closeModal('modalAddSale');
-                showToast('✅ Venta registrada! Stock actualizado. Abre tu Google Sheet para verificar.');
+                showToast('Venta registrada! Stock actualizado.');
                 btn.classList.remove('loading');
                 btn.disabled = false;
+
+                // Recargar inventario para actualizar stock
+                loadInventario();
             }, 2000);
         }
 
@@ -1391,71 +1483,8 @@
             });
         }
 
-        function onProductChange() {
-            const select = document.getElementById('saleProducto');
-            const selectedValue = select.value;
 
-            if (selectedValue) {
-                const item = JSON.parse(selectedValue);
-                document.getElementById('salePrecio').value = item.precio;
-                calculateTotal();
-            } else {
-                document.getElementById('salePrecio').value = '';
-                document.getElementById('saleTotal').value = '';
-            }
-        }
 
-        function submitAddSale(event) {
-            event.preventDefault();
-
-            const btn = document.getElementById('btnSubmitSale');
-            btn.classList.add('loading');
-            btn.disabled = true;
-
-            const selectedProduct = JSON.parse(document.getElementById('saleProducto').value);
-
-            const data = {
-                action: 'addSale',
-                producto: selectedProduct.producto,
-                talle: selectedProduct.talles,
-                cantidad: parseInt(document.getElementById('saleCantidad').value),
-                precio: parseFloat(document.getElementById('salePrecio').value),
-                metodoPago: document.getElementById('saleMetodoPago').value
-            };
-
-            // Crear iframe oculto si no existe
-            let iframe = document.getElementById('hidden_iframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'hidden_iframe';
-                iframe.name = 'hidden_iframe';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
-            }
-
-            // Crear formulario temporal
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = GOOGLE_SCRIPT_URL;
-            form.target = 'hidden_iframe';
-
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify(data);
-            form.appendChild(input);
-
-            document.body.appendChild(form);
-            form.submit();
-
-            setTimeout(() => {
-                document.body.removeChild(form);
-                closeModal('modalAddSale');
-                showToast('Venta registrada! Stock actualizado. Abre tu Google Sheet para verificar.');
-                btn.classList.remove('loading');
-                btn.disabled = false;
-            }, 2000);
-        }
         // 📊 CARGAR DATOS DINÁMICOS
         let ventasCache = [];
 
