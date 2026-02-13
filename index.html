@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hillsong Inventory App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1e1e1e;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .mobile-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #1e1e1e;
+            position: relative;
+            padding-bottom: 90px;
+        }
+
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 24px;
+            background: #1e1e1e;
+            width: 100%;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: url('https://res.cloudinary.com/dh4hbkqkp/image/upload/v1770941159/8bdb298b-eabe-4885-ba6d-66f761123fd5-HILLSONG_LOGO_OUTLINE-02_1___largepreview___fht4on.png') no-repeat center;
+            background-size: contain;
+        }
+
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .login-subtitle {
+            color: #888888;
+            text-align: center;
+            font-size: 15px;
+            margin-bottom: 48px;
+            line-height: 1.5;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 18px 20px;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #5a5a5a;
+            background: #2d2d2d;
+        }
+
+        .login-input::placeholder {
+            color: #666666;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(90, 90, 90, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .header {
+            padding: 24px 20px 16px;
+            background: #1e1e1e;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #2a2a2a;
+            border-radius: 16px;
+            padding: 20px 16px;
+            border: 1px solid #333333;
+        }
+
+        .stat-label {
+            color: #888888;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #ffffff;
+        }
+
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .product-item {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #333333;
+        }
+
+        .product-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .product-details {
+            color: #888888;
+            font-size: 13px;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            background: rgba(42, 42, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #333333;
+            padding: 8px 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            flex: 1;
+            padding: 8px;
+        }
+
+        .nav-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #666666;
+            transition: all 0.3s ease;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            color: #666666;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item.active .nav-icon svg {
+            stroke: #ffffff;
+        }
+
+        .nav-item.active .nav-label {
+            color: #ffffff;
+        }
+
+        .add-btn-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .add-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
+            border: 4px solid #1e1e1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            position: absolute;
+            bottom: 16px;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .add-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: #ffffff;
+        }
+
+        .action-menu {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: calc(100% - 40px);
+            max-width: 390px;
+            background: #2a2a2a;
+            border-radius: 20px;
+            border: 1px solid #333333;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+        }
+
+        .action-menu.show {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        .action-item {
+            background: #333333;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        .action-item:hover {
+            background: #3a3a3a;
+        }
+
+        .action-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #ffffff;
+        }
+
+        .action-text h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .action-text p {
+            font-size: 12px;
+            color: #888888;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .link-button {
+            width: 100%;
+            padding: 14px;
+            background: #333333;
+            border: none;
+            border-radius: 10px;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .link-button:hover {
+            background: #3a3a3a;
+        }
+
+        .desktop-add-btn {
+            display: none;
+        }
+
+        /* 🎨 MODAL STYLES */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border-radius: 20px;
+            border: 1px solid #3a3a3a;
+            width: calc(100% - 40px);
+            max-width: 420px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 32px 24px;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #ffffff;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: #888888;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #aaaaaa;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #5a5a5a;
+            background: #252525;
+        }
+
+        .form-input::placeholder {
+            color: #666666;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: #333333;
+            color: #ffffff;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #3a3a3a;
+        }
+
+        .modal-btn-submit {
+            background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
+            color: #ffffff;
+        }
+
+        .modal-btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(90, 90, 90, 0.4);
+        }
+
+        .modal-btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal-btn-submit.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .modal-btn-submit.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: calc(100% - 40px);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-success {
+            border-color: #22c55e;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .mobile-container {
+                max-width: 100%;
+                width: 100%;
+                border-radius: 24px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                border: 1px solid #3a3a3a;
+                padding-bottom: 0;
+                padding-top: 80px;
+            }
+
+            .bottom-nav {
+                position: absolute;
+                top: 0;
+                bottom: auto;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 1413px;
+                padding: 16px 24px;
+                border-top: none;
+                border-bottom: 1px solid #333333;
+                border-radius: 24px 24px 0 0;
+            }
+
+            .nav-item {
+                flex-direction: row;
+                gap: 8px;
+                padding: 12px 20px;
+                border-radius: 12px;
+            }
+
+            .nav-item:hover {
+                background: #333333;
+            }
+
+            .nav-icon svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .nav-label {
+                font-size: 14px;
+            }
+
+            .add-btn-wrapper {
+                display: none;
+            }
+
+            .desktop-add-btn {
+                display: flex;
+                position: fixed;
+                bottom: 40px;
+                right: 40px;
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
+                border: none;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+                transition: all 0.3s ease;
+                z-index: 1001;
+            }
+
+            .desktop-add-btn:hover {
+                transform: translateY(-4px) scale(1.1);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            }
+
+            .desktop-add-btn svg {
+                width: 32px;
+                height: 32px;
+                stroke: #ffffff;
+            }
+
+            .action-menu {
+                bottom: 120px;
+                right: 40px;
+                left: auto;
+                transform: scale(0);
+                transform-origin: bottom right;
+                max-width: 320px;
+            }
+
+            .action-menu.show {
+                transform: scale(1);
+            }
+
+            .content {
+                padding: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+
+            .product-list {
+                flex-direction: row;
+            }
+
+            .product-item {
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .mobile-container {
+                max-width: 800px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-logo" id="logoContainer"></div>
+            <h1 class="login-title">Bienvenido</h1>
+            <p class="login-subtitle">Ingresa la clave para continuar</p>
+            <input type="password" class="login-input" id="passwordInput" placeholder="Clave de acceso"
+                onkeypress="handleEnter(event)">
+            <button class="login-btn" onclick="login()">Entrar</button>
+        </div>
+    </div>
+
+    <div id="mainApp" class="mobile-container hidden">
+        <div id="homePage" class="page active">
+            <div class="header">
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Ventas Hoy</div>
+                        <div class="stat-value">8</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Stock Bajo</div>
+                        <div class="stat-value">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Productos</div>
+                        <div class="stat-value">18</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Este Mes</div>
+                        <div class="stat-value">124</div>
+                    </div>
+                </div>
+                <h2 class="section-title">Actividad Reciente</h2>
+                <div class="product-list">
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Venta: Remera Negra</h3>
+                            <div class="product-details">Hace 5 min • Talle M</div>
+                        </div>
+                        <div class="product-price">$5.000</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Stock: Pantalón Jean</h3>
+                            <div class="product-details">Hace 1 hora • +10 unidades</div>
+                        </div>
+                        <div class="product-price">+10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="inventarioPage" class="page">
+            <div class="header">
+                <h1 class="page-title">Inventario</h1>
+            </div>
+            <div class="content">
+                <div class="product-list">
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Remera Negra</h3>
+                            <div class="product-details">Stock: 3 • S, M, L</div>
+                        </div>
+                        <div class="product-price">$5.000</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Pantalón Jean</h3>
+                            <div class="product-details">Stock: 15 • 28-34</div>
+                        </div>
+                        <div class="product-price">$8.000</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Zapatillas</h3>
+                            <div class="product-details">Stock: 8 • 38-44</div>
+                        </div>
+                        <div class="product-price">$12.000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="ventasPage" class="page">
+            <div class="header">
+                <h1 class="page-title">Ventas</h1>
+            </div>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Hoy</div>
+                        <div class="stat-value">$45k</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Este Mes</div>
+                        <div class="stat-value">$620k</div>
+                    </div>
+                </div>
+                <h2 class="section-title">Últimas Ventas</h2>
+                <div class="product-list">
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Remera Negra</h3>
+                            <div class="product-details">12 Feb • M • Efectivo</div>
+                        </div>
+                        <div class="product-price">$5.000</div>
+                    </div>
+                    <div class="product-item">
+                        <div class="product-info">
+                            <h3>Zapatillas</h3>
+                            <div class="product-details">12 Feb • 42 • Transfer.</div>
+                        </div>
+                        <div class="product-price">$12.000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="planillasPage" class="page">
+            <div class="header">
+                <h1 class="page-title">Planillas</h1>
+            </div>
+            <div class="content">
+                <div class="product-list">
+                    <div class="product-item" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                        <div class="product-info" style="width: 100%;">
+                            <h3>Hoja de Inventario</h3>
+                            <div class="product-details">Última actualización hace 5 min</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; width: 100%; flex-direction: column;">
+                            <button onclick="openSheet('inventario')" class="link-button">Abrir</button>
+                            <button onclick="copyLink('inventario')" class="link-button">Copiar Link</button>
+                        </div>
+                    </div>
+                    <div class="product-item" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                        <div class="product-info" style="width: 100%;">
+                            <h3>Hoja de Ventas</h3>
+                            <div class="product-details">Última actualización hace 5 min</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; width: 100%; flex-direction: column;">
+                            <button onclick="openSheet('ventas')" class="link-button">Abrir</button>
+                            <button onclick="copyLink('ventas')" class="link-button">Copiar Link</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-menu" id="actionMenu">
+            <button class="action-item" onclick="showAddStock()">
+                <span class="action-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </span>
+                <div class="action-text">
+                    <h4>Agregar Stock</h4>
+                    <p>Añadir productos al inventario</p>
+                </div>
+            </button>
+            <button class="action-item" onclick="showAddSale()">
+                <span class="action-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </span>
+                <div class="action-text">
+                    <h4>Registrar Venta</h4>
+                    <p>Nueva venta de producto</p>
+                </div>
+            </button>
+        </div>
+
+        <button class="desktop-add-btn" onclick="toggleActionMenu()">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+        </button>
+
+        <div class="overlay" id="overlay" onclick="closeActionMenu()"></div>
+
+        <nav class="bottom-nav">
+            <a class="nav-item active" onclick="changePage('home', event)" href="#">
+                <div class="nav-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </div>
+                <div class="nav-label">Home</div>
+            </a>
+            <a class="nav-item" onclick="changePage('inventario', event)" href="#">
+                <div class="nav-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div class="nav-label">Inventario</div>
+            </a>
+            <div class="add-btn-wrapper">
+                <button class="add-btn" onclick="toggleActionMenu()">
+                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+            <a class="nav-item" onclick="changePage('ventas', event)" href="#">
+                <div class="nav-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <div class="nav-label">Ventas</div>
+            </a>
+            <a class="nav-item" onclick="changePage('planillas', event)" href="#">
+                <div class="nav-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div class="nav-label">Planillas</div>
+            </a>
+        </nav>
+    </div>
+
+    <!-- MODAL AGREGAR STOCK -->
+    <div class="modal" id="modalAddStock">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <h2 class="modal-title">Agregar Stock</h2>
+                <p class="modal-subtitle">Completa los datos del producto</p>
+            </div>
+            <form id="formAddStock" onsubmit="submitAddStock(event)">
+                <div class="form-group">
+                    <label class="form-label">Nombre del producto</label>
+                    <input type="text" class="form-input" id="stockProducto" placeholder="Ej: Remera Negra" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-input" id="stockCantidad" placeholder="Ej: 10" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Talles / Medidas</label>
+                    <input type="text" class="form-input" id="stockTalles" placeholder="Ej: S, M, L, XL" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Precio</label>
+                    <input type="number" class="form-input" id="stockPrecio" placeholder="Ej: 5000" min="0" step="0.01"
+                        required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-cancel"
+                        onclick="closeModal('modalAddStock')">Cancelar</button>
+                    <button type="submit" class="modal-btn modal-btn-submit" id="btnSubmitStock">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REGISTRAR VENTA -->
+    <div class="modal" id="modalAddSale">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <h2 class="modal-title">Registrar Venta</h2>
+                <p class="modal-subtitle">Completa los datos de la venta</p>
+            </div>
+            <form id="formAddSale" onsubmit="submitAddSale(event)">
+                <div class="form-group">
+                    <label class="form-label">Producto</label>
+                    <input type="text" class="form-input" id="saleProducto" placeholder="Ej: Remera Negra" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Talle</label>
+                    <input type="text" class="form-input" id="saleTalle" placeholder="Ej: M" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-input" id="saleCantidad" placeholder="Ej: 1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Precio Unitario</label>
+                    <input type="number" class="form-input" id="salePrecio" placeholder="Ej: 5000" min="0" step="0.01"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Método de Pago</label>
+                    <input type="text" class="form-input" id="saleMetodoPago" placeholder="Ej: Efectivo" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-cancel"
+                        onclick="closeModal('modalAddSale')">Cancelar</button>
+                    <button type="submit" class="modal-btn modal-btn-submit" id="btnSubmitSale">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast toast-success" id="toast">
+        <div class="toast-icon">✓</div>
+        <div class="toast-message" id="toastMessage"></div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxO7IyzsY6rZVfGEacqZfTjIfqUXZ0Iv39TsMJhtxjbQ-0cLiqiID4CCm9zr2lKR7-Azg/exec';
+
+        const CONFIG = {
+            PASSWORD: 'hillsong2025',
+            SPREADSHEET_ID: '1UYkhwQVh0_Gr1epjSWIQSzl0FYMLApx53QdLSOAQBFs'
+        };
+
+        const SHEET_LINKS = {
+            inventario: 'https://docs.google.com/spreadsheets/d/1UYkhwQVh0_Gr1epjSWIQSzl0FYMLApx53QdLSOAQBFs/edit?gid=0#gid=0',
+            ventas: 'https://docs.google.com/spreadsheets/d/1UYkhwQVh0_Gr1epjSWIQSzl0FYMLApx53QdLSOAQBFs/edit?gid=456383113#gid=456383113'
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const logoContainer = document.getElementById('logoContainer');
+            const img = document.createElement('img');
+            img.src = 'https://res.cloudinary.com/dh4hbkqkp/image/upload/v1770941159/8bdb298b-eabe-4885-ba6d-66f761123fd5-HILLSONG_LOGO_OUTLINE-02_1___largepreview___fht4on.png';
+            img.alt = 'Hillsong Logo';
+            logoContainer.appendChild(img);
+        });
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') login();
+        }
+
+        function login() {
+            const input = document.getElementById('passwordInput');
+            if (input.value === CONFIG.PASSWORD) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+            } else {
+                input.value = '';
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '#3a3a3a', 1000);
+            }
+        }
+
+        function changePage(page, event) {
+            event.preventDefault();
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(page + 'Page').classList.add('active');
+            event.currentTarget.classList.add('active');
+            closeActionMenu();
+        }
+
+        function toggleActionMenu() {
+            document.getElementById('actionMenu').classList.toggle('show');
+            document.getElementById('overlay').classList.toggle('show');
+        }
+
+        function closeActionMenu() {
+            document.getElementById('actionMenu').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        function showAddStock() {
+            closeActionMenu();
+            document.getElementById('modalAddStock').classList.add('show');
+            document.getElementById('stockProducto').focus();
+        }
+
+        function showAddSale() {
+            closeActionMenu();
+            document.getElementById('modalAddSale').classList.add('show');
+            document.getElementById('saleProducto').focus();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            document.getElementById(modalId).querySelector('form').reset();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target.id);
+            }
+        });
+
+        function submitAddStock(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('btnSubmitStock');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            const data = {
+                action: 'addStock',
+                producto: document.getElementById('stockProducto').value,
+                cantidad: parseInt(document.getElementById('stockCantidad').value),
+                talles: document.getElementById('stockTalles').value,
+                precio: parseFloat(document.getElementById('stockPrecio').value)
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(() => {
+                    closeModal('modalAddStock');
+                    showToast('✅ Stock agregado correctamente!');
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                })
+                .catch(() => {
+                    closeModal('modalAddStock');
+                    showToast('✅ Stock agregado correctamente!');
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                });
+        }
+
+        function submitAddSale(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('btnSubmitSale');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            const data = {
+                action: 'addSale',
+                producto: document.getElementById('saleProducto').value,
+                talle: document.getElementById('saleTalle').value,
+                cantidad: parseInt(document.getElementById('saleCantidad').value),
+                precio: parseFloat(document.getElementById('salePrecio').value),
+                metodoPago: document.getElementById('saleMetodoPago').value
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(() => {
+                    closeModal('modalAddSale');
+                    showToast('✅ Venta registrada! Stock actualizado automáticamente.');
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                })
+                .catch(() => {
+                    closeModal('modalAddSale');
+                    showToast('✅ Venta registrada! Stock actualizado automáticamente.');
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const messageEl = document.getElementById('toastMessage');
+
+            messageEl.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function copyLink(tipo) {
+            navigator.clipboard.writeText(SHEET_LINKS[tipo]).then(() => {
+                showToast('✅ Link copiado al portapapeles');
+            });
+        }
+
+        function openSheet(tipo) {
+            window.open(SHEET_LINKS[tipo], '_blank');
+        }
+    </script>
+</body>
+
+</html>
