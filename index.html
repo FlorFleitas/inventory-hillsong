@@ -560,7 +560,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .toast {
@@ -725,6 +727,22 @@
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
+
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        select.form-input option {
+            background: #2a2a2a;
+            color: #ffffff;
+            padding: 12px;
         }
     </style>
 </head>
@@ -1016,28 +1034,45 @@
                 <h2 class="modal-title">Registrar Venta</h2>
                 <p class="modal-subtitle">Completa los datos de la venta</p>
             </div>
+
             <form id="formAddSale" onsubmit="submitAddSale(event)">
                 <div class="form-group">
-                    <label class="form-label">Producto</label>
-                    <input type="text" class="form-input" id="saleProducto" placeholder="Ej: Remera Negra" required>
+                    <label class="form-label">Producto y Talle</label>
+                    <select class="form-input" id="saleProducto" onchange="onProductChange()" required>
+                        <option value="">Cargando productos...</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Talle</label>
-                    <input type="text" class="form-input" id="saleTalle" placeholder="Ej: M" required>
-                </div>
+
                 <div class="form-group">
                     <label class="form-label">Cantidad</label>
-                    <input type="number" class="form-input" id="saleCantidad" placeholder="Ej: 1" min="1" required>
+                    <input type="number" class="form-input" id="saleCantidad" placeholder="Ej: 1" min="1"
+                        oninput="calculateTotal()" required>
                 </div>
+
                 <div class="form-group">
                     <label class="form-label">Precio Unitario</label>
                     <input type="number" class="form-input" id="salePrecio" placeholder="Ej: 5000" min="0" step="0.01"
-                        required>
+                        readonly style="background: #252525;">
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total</label>
+                    <input type="number" class="form-input" id="saleTotal" placeholder="0.00" readonly
+                        style="background: #252525; font-weight: 600; font-size: 18px;">
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Método de Pago</label>
-                    <input type="text" class="form-input" id="saleMetodoPago" placeholder="Ej: Efectivo" required>
+                    <select class="form-input" id="saleMetodoPago" required>
+                        <option value="">Selecciona un método...</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Mercado Pago">Mercado Pago</option>
+                        <option value="Otro">Otro</option>
+                    </select>
                 </div>
+
                 <div class="modal-actions">
                     <button type="button" class="modal-btn modal-btn-cancel"
                         onclick="closeModal('modalAddSale')">Cancelar</button>
@@ -1054,7 +1089,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxO7IyzsY6rZVfGEacqZfTjIfqUXZ0Iv39TsMJhtxjbQ-0cLiqiID4CCm9zr2lKR7-Azg/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRGB4uqYp8RkmsZI95MyAIJJ-OThOS6I1pj8zpVmQq9RJsyha_7TT5wzOKoljPiyg6QQ/exec';
 
         const CONFIG = {
             PASSWORD: 'hillsong2025',
@@ -1065,6 +1100,70 @@
             inventario: 'https://docs.google.com/spreadsheets/d/1UYkhwQVh0_Gr1epjSWIQSzl0FYMLApx53QdLSOAQBFs/edit?gid=0#gid=0',
             ventas: 'https://docs.google.com/spreadsheets/d/1UYkhwQVh0_Gr1epjSWIQSzl0FYMLApx53QdLSOAQBFs/edit?gid=456383113#gid=456383113'
         };
+
+        // 📦 CACHE DE INVENTARIO
+        let inventarioCache = [];
+
+        // Cargar inventario al iniciar la app
+        async function loadInventario() {
+            try {
+                const sheetId = CONFIG.SPREADSHEET_ID;
+                const gid = '0'; // GID de la pestaña Inventario
+                const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+                const response = await fetch(url);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+
+                inventarioCache = [];
+
+                // Parsear datos (saltamos la primera fila que son los headers)
+                for (let i = 1; i < json.table.rows.length; i++) {
+                    const row = json.table.rows[i];
+                    if (row.c[0] && row.c[0].v) { // Si tiene producto
+                        const producto = row.c[0].v;
+                        const stock = row.c[1] ? row.c[1].v : 0;
+                        const talles = row.c[2] ? row.c[2].v : '';
+                        const precio = row.c[3] ? row.c[3].v : 0;
+
+                        if (stock > 0) { // Solo productos con stock
+                            inventarioCache.push({
+                                producto: producto,
+                                stock: stock,
+                                talles: talles,
+                                precio: precio
+                            });
+                        }
+                    }
+                }
+
+                console.log('✅ Inventario cargado:', inventarioCache);
+            } catch (error) {
+                console.error('❌ Error cargando inventario:', error);
+            }
+        }
+
+        // Llenar el select de productos
+        function fillProductSelect() {
+            const select = document.getElementById('saleProducto');
+            select.innerHTML = '<option value="">Selecciona un producto...</option>';
+
+            inventarioCache.forEach(item => {
+                const option = document.createElement('option');
+                option.value = JSON.stringify(item); // Guardamos todo el objeto
+                option.textContent = `${item.producto} - ${item.talles} (Stock: ${item.stock})`;
+                select.appendChild(option);
+            });
+        }
+
+        // Calcular total automáticamente
+        function calculateTotal() {
+            const cantidad = parseInt(document.getElementById('saleCantidad').value) || 0;
+            const precio = parseFloat(document.getElementById('salePrecio').value) || 0;
+            const total = cantidad * precio;
+
+            document.getElementById('saleTotal').value = total.toFixed(2);
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
             const logoContainer = document.getElementById('logoContainer');
@@ -1147,23 +1246,41 @@
                 precio: parseFloat(document.getElementById('stockPrecio').value)
             };
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-                .then(() => {
-                    closeModal('modalAddStock');
-                    showToast('✅ Stock agregado correctamente!');
-                    btn.classList.remove('loading');
-                    btn.disabled = false;
-                })
-                .catch(() => {
-                    closeModal('modalAddStock');
-                    showToast('✅ Stock agregado correctamente!');
-                    btn.classList.remove('loading');
-                    btn.disabled = false;
-                });
+            // Crear iframe oculto si no existe
+            let iframe = document.getElementById('hidden_iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'hidden_iframe';
+                iframe.name = 'hidden_iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+
+            // Crear formulario temporal
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = GOOGLE_SCRIPT_URL;
+            form.target = 'hidden_iframe';
+
+            // Agregar el campo de datos
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(data);
+            form.appendChild(input);
+
+            // Agregar al DOM y enviar
+            document.body.appendChild(form);
+            form.submit();
+
+            // Limpiar después de enviar
+            setTimeout(() => {
+                document.body.removeChild(form);
+                closeModal('modalAddStock');
+                showToast('✅ Stock agregado correctamente! Abre tu Google Sheet para verificar.');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }, 2000);
         }
 
         function submitAddSale(event) {
@@ -1182,23 +1299,41 @@
                 metodoPago: document.getElementById('saleMetodoPago').value
             };
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-                .then(() => {
-                    closeModal('modalAddSale');
-                    showToast('✅ Venta registrada! Stock actualizado automáticamente.');
-                    btn.classList.remove('loading');
-                    btn.disabled = false;
-                })
-                .catch(() => {
-                    closeModal('modalAddSale');
-                    showToast('✅ Venta registrada! Stock actualizado automáticamente.');
-                    btn.classList.remove('loading');
-                    btn.disabled = false;
-                });
+            // Crear iframe oculto si no existe
+            let iframe = document.getElementById('hidden_iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'hidden_iframe';
+                iframe.name = 'hidden_iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+
+            // Crear formulario temporal
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = GOOGLE_SCRIPT_URL;
+            form.target = 'hidden_iframe';
+
+            // Agregar el campo de datos
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(data);
+            form.appendChild(input);
+
+            // Agregar al DOM y enviar
+            document.body.appendChild(form);
+            form.submit();
+
+            // Limpiar después de enviar
+            setTimeout(() => {
+                document.body.removeChild(form);
+                closeModal('modalAddSale');
+                showToast('✅ Venta registrada! Stock actualizado. Abre tu Google Sheet para verificar.');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }, 2000);
         }
 
         function showToast(message) {
@@ -1215,13 +1350,286 @@
 
         function copyLink(tipo) {
             navigator.clipboard.writeText(SHEET_LINKS[tipo]).then(() => {
-                showToast('✅ Link copiado al portapapeles');
+                showToast('Link copiado al portapapeles');
             });
         }
 
         function openSheet(tipo) {
             window.open(SHEET_LINKS[tipo], '_blank');
         }
+
+        function showAddSale() {
+            closeActionMenu();
+            loadInventario().then(() => {
+                fillProductSelect();
+                document.getElementById('modalAddSale').classList.add('show');
+            });
+        }
+
+        function onProductChange() {
+            const select = document.getElementById('saleProducto');
+            const selectedValue = select.value;
+
+            if (selectedValue) {
+                const item = JSON.parse(selectedValue);
+                document.getElementById('salePrecio').value = item.precio;
+                calculateTotal();
+            } else {
+                document.getElementById('salePrecio').value = '';
+                document.getElementById('saleTotal').value = '';
+            }
+        }
+
+        function submitAddSale(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('btnSubmitSale');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            const selectedProduct = JSON.parse(document.getElementById('saleProducto').value);
+
+            const data = {
+                action: 'addSale',
+                producto: selectedProduct.producto,
+                talle: selectedProduct.talles,
+                cantidad: parseInt(document.getElementById('saleCantidad').value),
+                precio: parseFloat(document.getElementById('salePrecio').value),
+                metodoPago: document.getElementById('saleMetodoPago').value
+            };
+
+            // Crear iframe oculto si no existe
+            let iframe = document.getElementById('hidden_iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'hidden_iframe';
+                iframe.name = 'hidden_iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+
+            // Crear formulario temporal
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = GOOGLE_SCRIPT_URL;
+            form.target = 'hidden_iframe';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(data);
+            form.appendChild(input);
+
+            document.body.appendChild(form);
+            form.submit();
+
+            setTimeout(() => {
+                document.body.removeChild(form);
+                closeModal('modalAddSale');
+                showToast('Venta registrada! Stock actualizado. Abre tu Google Sheet para verificar.');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }, 2000);
+        }
+        // 📊 CARGAR DATOS DINÁMICOS
+        let ventasCache = [];
+
+        // Cargar ventas desde Google Sheets
+        async function loadVentas() {
+            try {
+                const sheetId = CONFIG.SPREADSHEET_ID;
+                const gid = '456383113'; // GID de la pestaña Ventas
+                const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+                const response = await fetch(url);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+
+                ventasCache = [];
+
+                // Parsear datos (saltamos la primera fila que son los headers)
+                for (let i = 1; i < json.table.rows.length; i++) {
+                    const row = json.table.rows[i];
+                    if (row.c[0] && row.c[0].v) { // Si tiene fecha
+                        ventasCache.push({
+                            fecha: row.c[0] ? row.c[0].f || row.c[0].v : '',
+                            producto: row.c[1] ? row.c[1].v : '',
+                            talle: row.c[2] ? row.c[2].v : '',
+                            cantidad: row.c[3] ? row.c[3].v : 0,
+                            precio: row.c[4] ? row.c[4].v : 0,
+                            metodoPago: row.c[5] ? row.c[5].v : '',
+                            total: row.c[6] ? row.c[6].v : 0
+                        });
+                    }
+                }
+
+                // Ordenar por más reciente primero
+                ventasCache.reverse();
+
+                console.log('✅ Ventas cargadas:', ventasCache.length);
+            } catch (error) {
+                console.error('❌ Error cargando ventas:', error);
+            }
+        }
+
+        // Renderizar Dashboard
+        async function renderDashboard() {
+            await Promise.all([loadInventario(), loadVentas()]);
+
+            // Calcular estadísticas
+            const today = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const ventasHoy = ventasCache.filter(v => v.fecha.includes(today.split('/')[0] + '/' + today.split('/')[1]));
+            const stockBajo = inventarioCache.filter(item => item.stock < 5);
+            const totalProductos = inventarioCache.length;
+
+            const thisMonth = new Date().getMonth() + 1;
+            const ventasMes = ventasCache.filter(v => {
+                const parts = v.fecha.split('/');
+                return parts.length > 1 && parseInt(parts[1]) === thisMonth;
+            });
+
+            // Actualizar stats
+            document.querySelector('#homePage .stats-grid').innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Ventas Hoy</div>
+            <div class="stat-value">${ventasHoy.length}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Stock Bajo</div>
+            <div class="stat-value">${stockBajo.length}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Productos</div>
+            <div class="stat-value">${totalProductos}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Este Mes</div>
+            <div class="stat-value">${ventasMes.length}</div>
+        </div>
+    `;
+
+            // Actividad Reciente (últimas 5 actividades)
+            const actividades = [];
+
+            // Agregar ventas recientes
+            ventasCache.slice(0, 3).forEach(venta => {
+                actividades.push({
+                    tipo: 'venta',
+                    titulo: `Venta: ${venta.producto}`,
+                    detalles: `${venta.fecha} • ${venta.talle} • ${venta.metodoPago}`,
+                    valor: `$${venta.total.toLocaleString('es-AR')}`
+                });
+            });
+
+            // Renderizar actividades
+            const actividadesHTML = actividades.length > 0
+                ? actividades.map(act => `
+            <div class="product-item">
+                <div class="product-info">
+                    <h3>${act.titulo}</h3>
+                    <div class="product-details">${act.detalles}</div>
+                </div>
+                <div class="product-price">${act.valor}</div>
+            </div>
+        `).join('')
+                : '<div class="product-item"><div class="product-info"><h3>No hay actividad reciente</h3></div></div>';
+
+            document.querySelector('#homePage .product-list').innerHTML = actividadesHTML;
+        }
+
+        // Renderizar Inventario
+        async function renderInventario() {
+            await loadInventario();
+
+            const inventarioHTML = inventarioCache.length > 0
+                ? inventarioCache.map(item => `
+            <div class="product-item">
+                <div class="product-info">
+                    <h3>${item.producto}</h3>
+                    <div class="product-details">Stock: ${item.stock} • ${item.talles}</div>
+                </div>
+                <div class="product-price">$${item.precio.toLocaleString('es-AR')}</div>
+            </div>
+        `).join('')
+                : '<div class="product-item"><div class="product-info"><h3>No hay productos en inventario</h3></div></div>';
+
+            document.querySelector('#inventarioPage .product-list').innerHTML = inventarioHTML;
+        }
+
+        // Renderizar Ventas
+        async function renderVentas() {
+            await loadVentas();
+
+            // Calcular estadísticas
+            const today = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const ventasHoy = ventasCache.filter(v => v.fecha.includes(today.split('/')[0] + '/' + today.split('/')[1]));
+            const totalHoy = ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0);
+
+            const thisMonth = new Date().getMonth() + 1;
+            const ventasMes = ventasCache.filter(v => {
+                const parts = v.fecha.split('/');
+                return parts.length > 1 && parseInt(parts[1]) === thisMonth;
+            });
+            const totalMes = ventasMes.reduce((sum, v) => sum + (v.total || 0), 0);
+
+            // Actualizar stats
+            document.querySelector('#ventasPage .stats-grid').innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Total Hoy</div>
+            <div class="stat-value">$${(totalHoy / 1000).toFixed(0)}k</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Este Mes</div>
+            <div class="stat-value">$${(totalMes / 1000).toFixed(0)}k</div>
+        </div>
+    `;
+
+            // Últimas ventas (máximo 10)
+            const ventasHTML = ventasCache.slice(0, 10).length > 0
+                ? ventasCache.slice(0, 10).map(venta => `
+            <div class="product-item">
+                <div class="product-info">
+                    <h3>${venta.producto}</h3>
+                    <div class="product-details">${venta.fecha} • ${venta.talle} • ${venta.metodoPago}</div>
+                </div>
+                <div class="product-price">$${venta.total.toLocaleString('es-AR')}</div>
+            </div>
+        `).join('')
+                : '<div class="product-item"><div class="product-info"><h3>No hay ventas registradas</h3></div></div>';
+
+            document.querySelector('#ventasPage .product-list').innerHTML = ventasHTML;
+        }
+
+        // Actualizar changePage para cargar datos dinámicos
+        const originalChangePage = changePage;
+        changePage = function (page, event) {
+            originalChangePage(page, event);
+
+            // Cargar datos según la página
+            if (page === 'home') {
+                renderDashboard();
+            } else if (page === 'inventario') {
+                renderInventario();
+            } else if (page === 'ventas') {
+                renderVentas();
+            }
+        };
+
+        // Cargar dashboard al hacer login
+        const originalLogin = login;
+        login = function () {
+            const input = document.getElementById('passwordInput');
+            if (input.value === CONFIG.PASSWORD) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                // Cargar dashboard inmediatamente
+                renderDashboard();
+            } else {
+                input.value = '';
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '#3a3a3a', 1000);
+            }
+        };
     </script>
 </body>
 
